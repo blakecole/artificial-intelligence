@@ -147,55 +147,73 @@ def backchain_to_goal_tree(rules, hypothesis):
     (possibly with unbound variables), *not* AND or OR objects.
     Make sure to use simplify(...) to flatten trees where appropriate.
     """
-    # raise NotImplementedError
-
-    # Initialize Goal Tree with OR-Node to hypothesis
-    goal_tree = OR(hypothesis)
     if (not rules):
         return(hypothesis)
 
-    # Parse input string, split name from description
-    split = hypothesis.split(' ', 1)
-    pair = {'x': split[0], 'y': split[1]}
+    # Initialize Goal Tree with OR-Node to hypothesis
+    goal_tree = OR(hypothesis)
 
     # Initialize boolean to determine if any matches
     hit = False
 
     # ENTER RULE LIST LOOP
     for z in range(len(rules)):
-        print('\nRULE Z' + str(z+1) + ':')
-        print('consequent = ' + rules[z].consequent())
-        print('antecedent = ' + str(rules[z].antecedent()))
-        test = populate(rules[z].consequent(), pair)
+        # print('\nRULE Z' + str(z+1) + ':')
+        # print('consequent = ' + rules[z].consequent())
+        # print('antecedent = ' + str(rules[z].antecedent()))
+        var = match(rules[z].consequent(), hypothesis)
 
-        if (hypothesis == test):
+        if (var is not None):
             hit = True
-            print('(!)(!)(!) hypothesis MATCHED consequent (!)(!)(!)')
-            ants = populate(rules[z].antecedent(), pair)
-            #print('ants = ' + str(ants) + ' len(ants) = ' + str(len(ants)))
-            new = AND()
+            # print('var = ' + str(var))
+            ants = populate(rules[z].antecedent(), var)
+
+            # IF (antecedent is string): convert to AND or OR type
+            if (isinstance(ants, str)):
+                ant_type = ants.split()[0]
+                # print('ant_type = ' + ant_type)
+                if (ant_type == OR):
+                    ants = OR(ants)
+                else:
+                    ants = AND(ants)
+
+            # Allocate AND or OR list prior to diving deeper
+            if (isinstance(ants, AND)):
+                new = AND()
+            elif (isinstance(ants, OR)):
+                new = OR()
+
+            # print('ants = ' + str(ants) +
+            #      '\n  len(ants) = ' + str(len(ants)) +
+            #      '\n  type(ants) = ' + str(type(ants)) + '\n')
+
+            # For each antecedent, dive to next level of recursion
+            # IF (no match) come back up level, append AND/OR list
+            # IF (match) dive to next level of recursion
             for i in range(len(ants)):
                 new.append(backchain_to_goal_tree(rules, ants[i]))
 
+            # After addition of antecedents append top level list
             goal_tree.append(new)
 
     if (not hit):
-        # print('end of chain reached')
+        # IF (no hit): Leaf of Tree has been reached.
+        #              return(leaf) to higher level, append list there.
         return(hypothesis)
     else:
         return(simplify(goal_tree))
 
 
 # Uncomment this to test out your backward chainer:
-pretty_goal_tree(backchain_to_goal_tree(zookeeper_rules, 'opus is a penguin'))
+# pretty_goal_tree(backchain_to_goal_tree(zookeeper_rules, 'opus is a penguin'))
 
 
 #### Survey #########################################
 NAME = 'Blake Cole'
-COLLABORATORS = ''
-HOW_MANY_HOURS_THIS_LAB_TOOK = 15
+COLLABORATORS = 'Molly Nagele (via Piazza)'
+HOW_MANY_HOURS_THIS_LAB_TOOK = 17
 WHAT_I_FOUND_INTERESTING = 'It was cool.'
-WHAT_I_FOUND_BORING = 'Not so much boring as incredibly frustrating: I felt like there was inadequate documentation for the required APIs.  Learning how these objects and functions worked was the only real challenge in this lab.  I felt like I knew what needed to be done, but struggled for a long time to find the correct way to implement the solution, given the mildly opaque nature of the APIs.'
+WHAT_I_FOUND_BORING = '''Not so much boring as incredibly frustrating: I felt like there was inadequate documentation for the required APIs.  Learning how these objects and functions worked was the only real challenge in this lab.  I felt like I knew what needed to be done, but struggled for a long time to find the correct way to implement the solution, given the mildly opaque nature of the APIs.'''
 SUGGESTIONS = 'More documentation on APIs please!'
 
 
