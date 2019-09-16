@@ -1,3 +1,10 @@
+# ********************************************************** #
+#    NAME: Blake Cole                                        #
+#    ORGN: MIT                                               #
+#    FILE: lab0.py                                           #
+#    DATE: 7 SEP 2019                                        #
+# ********************************************************** #
+
 # MIT 6.034 Lab 0: Getting Started
 # Written by jb16, jmn, dxh, and past 6.034 staff
 
