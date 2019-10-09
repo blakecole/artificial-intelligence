@@ -34,8 +34,7 @@ def check_all_constraints(csp):
     variables = csp.get_all_variables()
     constraints = csp.get_all_constraints()
     # print('\n\nconstraints =', constraints)
-    while (variables):
-        v1 = variables.pop()
+    for v1 in variables:
         for v2 in variables:
             v1_assignment = csp.get_assignment(v1)
             v2_assignment = csp.get_assignment(v2)
@@ -44,8 +43,7 @@ def check_all_constraints(csp):
             #       str(v2_assignment) + ')')
             if ((v1_assignment is not None) and (v2_assignment is not None)):
                 for c in constraints:
-                    if ((v1 == c.var1 and v2 == c.var2) or
-                            (v1 == c.var2 and v2 == c.var1)):
+                    if (v1 == c.var1 and v2 == c.var2):
                         if (not c.check(v1_assignment, v2_assignment)):
                             # print(c, 'VIOLATED!')
                             return(False)
@@ -147,7 +145,8 @@ def eliminate_from_neighbors(csp, var):
         # ----------- FOR EACH NEIGHBOR ---------------
         # print('CURRENT NEIGHBOR:', n)
         death_row = []
-        constraints = csp.constraints_between(var, n)
+        constraints = csp.constraints_between(n, var)
+        assigned = csp.get_assignment(n)
         domain2 = csp.get_domain(n)
         for val2 in domain2:
             # ------- FOR EACH VALUE IN NEIGHBOR ------
@@ -165,7 +164,7 @@ def eliminate_from_neighbors(csp, var):
                     # print('val2 =', val2, 'safe! move on, please.')
                     break
                 # -------------------------------------
-            if (remove):
+            if (remove and val2 is not assigned):
                 death_row.append(val2)
                 # print(val2, 'slated for removal.')
                 # print('death_row =', death_row)
@@ -176,7 +175,7 @@ def eliminate_from_neighbors(csp, var):
         # print('eliminated_set =', eliminated_set)
 
         if (has_empty_domains(csp)):
-            print('DOMAIN COMPLETELY REDUCED! eliiminate_from_neighbors=None')
+            #print('DOMAIN COMPLETELY REDUCED! eliiminate_from_neighbors=None')
             return(None)
         # ---------------------------------------------
 
@@ -341,25 +340,58 @@ def propagate(enqueue_condition_fn, csp, queue=None):
     Uses enqueue_condition_fn to determine whether to enqueue a variable whose
     domain has been reduced. Same return type as domain_reduction.
     """
-    raise NotImplementedError
+    if (queue is None):
+        queue = csp.get_all_variables()
+    else:  # queue passed from search function after assigning variable
+        if (isinstance(queue, list)):
+            pass
+        elif(isinstance(queue, str)):
+            queue = [queue]
+
+    # print('\n\nDOMAIN REDUCTION: ORIGINAL QUEUE =', queue)
+
+    dequeued = []
+    while (queue):
+        var = queue.pop(0)
+        dequeued.append(var)
+        # print('dequeued =', dequeued)
+        forward_check = eliminate_from_neighbors(csp, var)
+        if (forward_check is not None):
+            for n in forward_check:
+                if(enqueue_condition_fn(csp, n) and (n not in queue)):
+                    queue.append(n)
+
+        if (has_empty_domains(csp)):
+            return(None)
+
+    return(dequeued)
 
 
 def condition_domain_reduction(csp, var):
-    """Returns True if var should be enqueued under the all-reduced-domains
-    condition, otherwise False"""
-    raise NotImplementedError
+    """
+    Returns True if var should be enqueued under the all-reduced-domains
+    condition, otherwise False
+    """
+    return(True)
 
 
 def condition_singleton(csp, var):
-    """Returns True if var should be enqueued under the singleton-domains
-    condition, otherwise False"""
-    raise NotImplementedError
+    """
+    Returns True if var should be enqueued under the singleton-domains
+    condition, otherwise False
+    """
+    if (len(csp.get_domain(var)) == 1):
+        return(True)
+    else:
+        return(False)
 
 
 def condition_forward_checking(csp, var):
-    """Returns True if var should be enqueued under the forward-checking
-    condition, otherwise False"""
-    raise NotImplementedError
+    """
+    Returns True if var should be enqueued under the forward-checking
+    condition, otherwise False
+    """
+    return(False)
 
 
 # Part 5B: Generic Constraint Solver ########################################
@@ -370,14 +402,47 @@ def solve_constraint_generic(problem, enqueue_condition=None):
     condition (a function). If enqueue_condition is None, uses DFS only.
     Same return type as solve_constraint_dfs.
     """
-    raise NotImplementedError
+    # ---------------------
+    #   INITIALIZE QUEUE
+    # ---------------------
+    # print('\n\nPROBLEM:\n', problem)
+
+    queue = [problem.copy()]
+    extensions = 0
+    solution = None
+
+    # ---------------------
+    #   COMPUTE SOLUTION
+    # ---------------------
+    while (queue):
+        subprob = queue.pop()
+        extensions += 1
+
+        if ((check_all_constraints(subprob)) and
+                (not has_empty_domains(subprob))):
+            if (not subprob.unassigned_vars):
+                solution = subprob.assignments
+                print(' * SOLUTION = ', (solution, extensions))
+                return((solution, extensions))
+            else:
+                newvar = subprob.pop_next_unassigned_var()
+                for val in reversed(subprob.get_domain(newvar)):
+                    newprob = subprob.copy().set_assignment(newvar, val)
+                    if (enqueue_condition):
+                        propagate(enqueue_condition, newprob, newvar)
+                    queue.append(newprob)  # do ONLY this for DFS (no prop)
+
+    # if queue empty, and there are still no solutions, return None
+    print(' * SOLUTION = ', (solution, extensions))
+    return((None, extensions))
+
 
 # QUESTION 5: How many extensions does it take to solve the Pokemon problem
 #             w/ forward checking and propagation through singleton domains?
 #            (Don't use domain reduction before solving it.)
-
-
-ANSWER_5 = 1
+pokemon_problem = get_pokemon_problem()
+full_solution = solve_constraint_generic(pokemon_problem, condition_singleton)
+ANSWER_5 = full_solution[1]
 
 
 # Part 6: Defining Custom Constraints #######################################
@@ -387,7 +452,10 @@ def constraint_adjacent(m, n):
     Returns True if m and n are adjacent, otherwise False.
     Assume m and n are ints.
     """
-    raise NotImplementedError
+    if (abs(m-n) == 1):
+        return(True)
+    else:
+        return(False)
 
 
 def constraint_not_adjacent(m, n):
@@ -395,7 +463,10 @@ def constraint_not_adjacent(m, n):
     Returns True if m and n are NOT adjacent, otherwise False.
     Assume m and n are ints.
     """
-    raise NotImplementedError
+    if(abs(m-n) != 1):
+        return(True)
+    else:
+        return(False)
 
 
 def all_different(variables):
@@ -403,7 +474,12 @@ def all_different(variables):
     Returns a list of constraints, with one difference constraint between
     each pair of variables.
     """
-    raise NotImplementedError
+    constraints = []
+    while (variables):
+        v1 = variables.pop()
+        for v2 in variables:
+            constraints.append(Constraint(v1, v2, constraint_different))
+    return(constraints)
 
 
 # SURVEY ####################################################################
