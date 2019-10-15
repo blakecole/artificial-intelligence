@@ -5,8 +5,8 @@ MIT 6.844 (6.034) - Artifical Intelligence - Course Repository
 | --- | --- |
 | lab 0 | Getting Started |
 | lab 1 | Rule-Based Systems |
-| lab 2 | Games |
-| lab 3 | Search |
+| lab 2 | Search |
+| lab 3 | Games |
 | lab 4 | Constraint Satisfaction Problems |
 | lab 5 | k-Nearest Neighbors & ID Trees |
 | lab 6 | Neural Nets |
