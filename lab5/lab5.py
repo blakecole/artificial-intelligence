@@ -119,8 +119,9 @@ for classifier in tree_classifiers:
                                 classifier,
                                 feature_test("tree_type")))
 """
-# Part 1D: Constructing an ID tree ##########################################
 
+
+# Part 1D: Constructing an ID tree ##########################################
 
 def find_best_classifier(data, possible_classifiers, target_classifier):
     """
@@ -155,9 +156,11 @@ def find_best_classifier(data, possible_classifiers, target_classifier):
 
 
 # To find the best classifier from 2014 Q2, Part A, uncomment:
+"""
 print(find_best_classifier(tree_data,
                            tree_classifiers,
                            feature_test("tree_type")))
+"""
 
 
 def construct_greedy_id_tree(data,
@@ -275,25 +278,25 @@ if DO_OPTIONAL_SECTION:
 ########################## k-NEAREST NEIGHBORS #############################
 ############################################################################
 
-#### Part 2A: Drawing Boundaries ###############################################
+# Part 2A: Drawing Boundaries ###############################################
 
-BOUNDARY_ANS_1 = None
-BOUNDARY_ANS_2 = None
+BOUNDARY_ANS_1 = 3
+BOUNDARY_ANS_2 = 4
 
-BOUNDARY_ANS_3 = None
-BOUNDARY_ANS_4 = None
+BOUNDARY_ANS_3 = 1
+BOUNDARY_ANS_4 = 2
 
-BOUNDARY_ANS_5 = None
-BOUNDARY_ANS_6 = None
-BOUNDARY_ANS_7 = None
-BOUNDARY_ANS_8 = None
-BOUNDARY_ANS_9 = None
+BOUNDARY_ANS_5 = 2
+BOUNDARY_ANS_6 = 4
+BOUNDARY_ANS_7 = 1
+BOUNDARY_ANS_8 = 4
+BOUNDARY_ANS_9 = 4
 
-BOUNDARY_ANS_10 = None
-BOUNDARY_ANS_11 = None
-BOUNDARY_ANS_12 = None
-BOUNDARY_ANS_13 = None
-BOUNDARY_ANS_14 = None
+BOUNDARY_ANS_10 = 4
+BOUNDARY_ANS_11 = 2
+BOUNDARY_ANS_12 = 1
+BOUNDARY_ANS_13 = 4
+BOUNDARY_ANS_14 = 4
 
 
 # Part 2B: Distance metrics #################################################
@@ -303,27 +306,41 @@ def dot_product(u, v):
     Computes dot product of two vectors u and v, each represented as a tuple
     or list of coordinates.  Assume the two vectors are the same length.
     """
-    raise NotImplementedError
+    if (len(u) != len(v)):
+        raise ValueError('ERROR: u and v  must be equal-length vectors)')
+    return(sum([(ui * vi) for ui, vi in zip(u, v)]))
 
 
 def norm(v):
     "Computes length of vector v, represented as a tuple or list of coords."
-    raise NotImplementedError
+    return(dot_product(v, v)**0.5)
 
 
 def euclidean_distance(point1, point2):
     "Given two Points, computes and returns the Euclidean distance."
-    raise NotImplementedError
+    u = point1.coords
+    v = point2.coords
+    if (len(u) != len(v)):
+        raise ValueError('ERROR: point1 and point2 inconsistent dims)')
+    return(sum([(ui - vi)**2 for ui, vi in zip(u, v)])**0.5)
 
 
 def manhattan_distance(point1, point2):
     "Given two Points, computes and returns the Manhattan distance."
-    raise NotImplementedError
+    u = point1.coords
+    v = point2.coords
+    if (len(u) != len(v)):
+        raise ValueError('ERROR: point1 and point2 inconsistent dims)')
+    return(sum([abs(ui - vi) for ui, vi in zip(u, v)]))
 
 
 def hamming_distance(point1, point2):
     "Given two Points, computes and returns the Hamming distance."
-    raise NotImplementedError
+    u = point1.coords
+    v = point2.coords
+    if (len(u) != len(v)):
+        raise ValueError('ERROR: point1 and point2 inconsistent dims)')
+    return(sum([(ui != vi) for ui, vi in zip(u, v)]))
 
 
 def cosine_distance(point1, point2):
@@ -331,7 +348,11 @@ def cosine_distance(point1, point2):
     Given two Points, computes and returns the cosine distance.
     Cosine distance is defined as 1-cos(angle_between(point1, point2)).
     """
-    raise NotImplementedError
+    u = point1.coords
+    v = point2.coords
+    if (len(u) != len(v)):
+        raise ValueError('ERROR: point1 and point2 inconsistent dims)')
+    return(1 - (dot_product(u, v) / (norm(u)*norm(v))))
 
 
 # Part 2C: Classifying points ###############################################
@@ -343,7 +364,11 @@ def get_k_closest_points(point, data, k, distance_metric):
     k points from the data that are closest to the test point, according to
     the distance metric.  Breaks ties lexicographically by coordinates.
     """
-    raise NotImplementedError
+    distance = [distance_metric(point, test_point) for test_point in data]
+    coords = [test_point.coords for test_point in data]
+    zipped = list(zip(data, distance, coords))
+    data_sorted = [p[0] for p in sorted(zipped, key=lambda x: (x[1], x[2]))]
+    return(data_sorted[0:k])
 
 
 def knn_classify_point(point, data, k, distance_metric):
@@ -353,15 +378,23 @@ def knn_classify_point(point, data, k, distance_metric):
     test point based on its k nearest neighbors, as determined by the
     distance metric. Assumes there are no ties.
     """
-    raise NotImplementedError
+    k_closest = get_k_closest_points(point, data, k, distance_metric)
+    classifications = [p.classification for p in k_closest]
+    mode = max(set(classifications), key=classifications.count)
+    return(mode)
 
 
-# To run your classify function on the k-nearest neighbors problem from 2014 Q2
-# part B2, uncomment the line below and try different values of k:
-# print(knn_classify_point(knn_tree_test_point, knn_tree_data, 1, euclidean_distance))
+# To run your classify function on the k-nearest neighbors problem from
+# 2014 Q2, part B2, uncomment the line below and try different values of k:
+"""
+print(knn_classify_point(knn_tree_test_point,
+                         knn_tree_data,
+                         1,
+                         euclidean_distance))
+"""
 
 
-# Part 2C: Choosing k #######################################################
+# Part 2D: Choosing k #######################################################
 
 def cross_validate(data, k, distance_metric):
     """
@@ -369,7 +402,19 @@ def cross_validate(data, k, distance_metric):
     distance metric(a function), performs leave-one-out cross-validation.
     Return the fraction of points classified correctly, as a float.
     """
-    raise NotImplementedError
+    correct = 0
+    total = len(data)
+    for i in range(total):
+        test_point = data[i]
+        training_data = data[0:i] + data[i+1:]
+        knn_estimate = knn_classify_point(test_point,
+                                          training_data,
+                                          k,
+                                          distance_metric)
+        if (knn_estimate == test_point.classification):
+            correct += 1
+    accuracy = correct/total
+    return(round(accuracy, 4))
 
 
 def find_best_k_and_metric(data):
@@ -380,30 +425,53 @@ def find_best_k_and_metric(data):
     Returns a tuple(k, distance_metric),
     where k is an int and distance_metric is a function.
     """
-    raise NotImplementedError
+    metrics = [euclidean_distance,
+               manhattan_distance,
+               hamming_distance,
+               cosine_distance]
+    k_values = range(1, len(data))
+
+    results = {}
+    for distance_metric in metrics:
+        best_accuracy = 0
+        best_k = 0
+        for k in k_values:
+            accuracy = cross_validate(data, k, distance_metric)
+            if (accuracy > best_accuracy):
+                best_accuracy = accuracy
+                best_k = k
+        results[distance_metric] = (best_k, best_accuracy)
+
+    results_sorted = sorted(results.items(),
+                            key=lambda x: (x[1][1], x[1][0]))
+    best_result = results_sorted.pop()
+    best_result_formatted = (best_result[1][0], best_result[0])
+    best_result_visual = (best_result[0].__name__,
+                          best_result[1][0],
+                          best_result[1][1])
+    print(best_result_visual)
+    return(best_result_formatted)
 
 
 # To find the best k and distance metric for 2014 Q2, part B, uncomment:
-# print(find_best_k_and_metric(knn_tree_data))
-
+print(find_best_k_and_metric(knn_tree_data))
 
 # Part 2E: More multiple choice #############################################
+kNN_ANSWER_1 = 'Overfitting'
+kNN_ANSWER_2 = 'Underfitting'
+kNN_ANSWER_3 = 4
 
-kNN_ANSWER_1 = None
-kNN_ANSWER_2 = None
-kNN_ANSWER_3 = None
-
-kNN_ANSWER_4 = None
-kNN_ANSWER_5 = None
-kNN_ANSWER_6 = None
-kNN_ANSWER_7 = None
+kNN_ANSWER_4 = 4
+kNN_ANSWER_5 = 1
+kNN_ANSWER_6 = 3
+kNN_ANSWER_7 = 3
 
 
 # SURVEY ####################################################################
 
 NAME = 'Blake Cole'
 COLLABORATORS = ''
-HOW_MANY_HOURS_THIS_LAB_TOOK = None
-WHAT_I_FOUND_INTERESTING = None
-WHAT_I_FOUND_BORING = None
-SUGGESTIONS = None
+HOW_MANY_HOURS_THIS_LAB_TOOK = 10
+WHAT_I_FOUND_INTERESTING = 'I enjoyed the lab! It was fun to implement algorithms for ID Trees and k-Nearest Neighbors.  It was challenging to wrap my mind around the API structure for ID trees at first, but ultimately worked it out.'
+WHAT_I_FOUND_BORING = 'N/A'
+SUGGESTIONS = 'How is this process related to the "zone-based" approach for k=1, using perpendicular bisectors?  Is there a means by which, for k=1, we can establish these boundaries algorithmically, so that we dont needt to compute the most likely classification iteratively, for each given mystery point?'
