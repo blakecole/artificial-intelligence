@@ -3,11 +3,11 @@
 # MIT 6.034 Lab 7: Support Vector Machines
 # This file is based on code originally written by Crystal Pan.
 
+from time import time
 from lab7 import *
 from display_svm import create_svm_graph
 from functools import reduce
 INF = float('inf')
-from time import time
 
 
 """
@@ -38,13 +38,13 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
     """Performs SMO using all of the training points until there are no changed
     alphas or until the max iteration depth is reached"""
     # Define alias for kernel function, converting Points to coordinates just in case
-    K = lambda p1, p2: kernel_fn(p1.coords, p2.coords)
+    def K(p1, p2): return kernel_fn(p1.coords, p2.coords)
 
     # Copy training data to avoid modifying input data
     training_points = deepcopy(training_points)
 
     # Initialize SVM
-    svm = SupportVectorMachine([0,0], 0, training_points, [])
+    svm = SupportVectorMachine([0, 0], 0, training_points, [])
 
     if show_graph:
         if not manual_animation:
@@ -53,7 +53,7 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
         if (animate and animation_delay > 0) or manual_animation:
             # Keep track of last update time and old SVM values
             last_update_time = time()
-            old_w = [0,0]
+            old_w = [0, 0]
             old_b = 0
             old_support_vectors = []
 
@@ -86,16 +86,20 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
                     upper_bound = INF
 
                 # Compute current error of alpha_i and alpha_j
-                error_i = reduce(lambda total,pt: total + (pt.classification * pt.alpha * K(i,pt) + b), training_points, 0) - i.classification
-                error_j = reduce(lambda total,pt: total + (pt.classification * pt.alpha * K(j,pt) + b), training_points, 0) - j.classification
+                error_i = reduce(lambda total, pt: total + (pt.classification *
+                                                            pt.alpha * K(i, pt) + b), training_points, 0) - i.classification
+                error_j = reduce(lambda total, pt: total + (pt.classification *
+                                                            pt.alpha * K(j, pt) + b), training_points, 0) - j.classification
 
                 # Store old alpha values before updating
                 old_alpha_i = i.alpha
                 old_alpha_j = j.alpha
 
                 # Update j.alpha, but keep it between lower and upper bounds
-                n = 2 * K(i,j) - K(i,i) - K(j,j) # Note: if K is dot_product, n = -||i-j||^2
-                j.alpha = old_alpha_j - ( j.classification * (error_i - error_j) / float(n) )
+                # Note: if K is dot_product, n = -||i-j||^2
+                n = 2 * K(i, j) - K(i, i) - K(j, j)
+                j.alpha = old_alpha_j - \
+                    (j.classification * (error_i - error_j) / float(n))
                 if j.alpha > upper_bound:
                     j.alpha = upper_bound
                 elif j.alpha < lower_bound:
@@ -106,10 +110,12 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
                     continue
 
                 # Update i.alpha, but ensure it stays non-negative
-                i.alpha = max(0, old_alpha_i + (i.classification * j.classification) * (old_alpha_j - j.alpha))
+                i.alpha = max(0, old_alpha_i + (i.classification *
+                                                j.classification) * (old_alpha_j - j.alpha))
 
                 # Update SVM based on alphas
-                update_svm_from_alphas(svm) # Note: kernel_fn is hardcoded as dot_product
+                # Note: kernel_fn is hardcoded as dot_product
+                update_svm_from_alphas(svm)
 
                 # Update b from SVM
                 b = svm.b
@@ -119,8 +125,8 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
                 if animation_delay > 0 or manual_animation:
                     # If values have not changed perceptibly, skip this update
                     if ([sv.name for sv in svm.support_vectors] == [sv.name for sv in old_support_vectors]
-                          and ((b==0 and old_b==0 and list_approx_equal(svm.w, old_w, 0.001))
-                               or (b!=0 and old_b !=0 and list_approx_equal(scalar_mult(1./b, svm.w), scalar_mult(1./old_b, old_w), 0.001)))):
+                        and ((b == 0 and old_b == 0 and list_approx_equal(svm.w, old_w, 0.001))
+                             or (b != 0 and old_b != 0 and list_approx_equal(scalar_mult(1./b, svm.w), scalar_mult(1./old_b, old_w), 0.001)))):
                         show_update = False
                     else:
                         # Update old stored values
@@ -152,12 +158,12 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
     print('# iterations:', iteration)
 
     # Compute final w, b, and SVs based on alphas
-    update_svm_from_alphas(svm) # Note: kernel_fn is hardcoded as dot_product
+    update_svm_from_alphas(svm)  # Note: kernel_fn is hardcoded as dot_product
 
     # Check training
     misclassified = misclassified_training_points(svm)
-    print("Training complete! SVM with decision boundary %.3f*x + %.3f*y + %.3f >= 0 misclassified %i points." \
-        % (svm.w[0], svm.w[1], svm.b, len(misclassified)))
+    print("Training complete! SVM with decision boundary %.3f*x + %.3f*y + %.3f >= 0 misclassified %i points."
+          % (svm.w[0], svm.w[1], svm.b, len(misclassified)))
 
     if show_graph:
         if manual_animation:
@@ -171,8 +177,8 @@ def train_svm(training_points, kernel_fn=dot_product, max_iter=500,
 
 if __name__ == '__main__':
     # Uncomment below to train on a different dataset.  Feel free to use different arguments!
-    train_svm(sample_data_1)
-#    train_svm(sample_data_2)
-#    train_svm(recit_data)
-#    train_svm(harvard_mit_data)
-#    train_svm(unseparable_data, animation_delay=0)
+    # train_svm(sample_data_1)
+    # train_svm(sample_data_2)
+    # train_svm(recit_data)
+    train_svm(harvard_mit_data)
+    # train_svm(unseparable_data, animation_delay=0)
